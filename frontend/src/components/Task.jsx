@@ -8,6 +8,8 @@ export default function Task({ onLogout }) {
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState("Open");
   const [filterStatus, setFilterStatus] = useState("All");
+  const [editingTaskId, setEditingTaskId] = useState(null);
+  const [editTitle, setEditTitle] = useState("");
 
   const navigate = useNavigate();
   const userId = localStorage.getItem("userId");
@@ -46,6 +48,28 @@ export default function Task({ onLogout }) {
     setStatus("Open");
     loadTasks();
   };
+
+  const startEdit = (task) => {
+      setEditingTaskId(task.id);
+      setEditTitle(task.title);
+    };
+
+  const saveTitle = async (taskId) => {
+    if (!editTitle.trim()) {
+      alert("Title cannot be empty");
+      return;
+    }
+
+    await updateTask(taskId, { title: editTitle });
+    setEditingTaskId(null);
+    loadTasks();
+  };
+
+  const cancelEdit = () => {
+    setEditingTaskId(null);
+    setEditTitle("");
+  };
+
 
   const removeTask = async (id) => {
     await deleteTask(id);
@@ -112,7 +136,22 @@ export default function Task({ onLogout }) {
         {filteredTasks.map((task) => (
           <li key={task.id} className="task-item">
             <div>
-              <strong>{task.title}</strong>
+              {editingTaskId === task.id ? (
+                <>
+                  <input
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                  />
+                  <button onClick={() => saveTitle(task.id)}>Save</button>
+                  <button onClick={cancelEdit}>Cancel</button>
+                </>
+              ) : (
+                <>
+                  <strong>{task.title}</strong>
+                  <button onClick={() => startEdit(task)}>Edit</button>
+                </>
+              )}
+
               <p>{task.description}</p>
               <select
                 value={task.status}
