@@ -44,3 +44,6 @@ The frontend communicates with a FastAPI backend running on:
 ### 1️⃣ Install dependencies
 ```bash
 npm install
+### 2️⃣ Run project
+```bash
+npm start
