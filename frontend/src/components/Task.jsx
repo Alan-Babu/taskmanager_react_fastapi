@@ -1,15 +1,21 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { getTasks, createTask, deleteTask } from "../API/api";
+import { getTasks, createTask, deleteTask, updateTask } from "../API/api";
 
 export default function Task({ onLogout }) {
   const [tasks, setTasks] = useState([]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState("Open");
+  const [filterStatus, setFilterStatus] = useState("All");
 
   const navigate = useNavigate();
   const userId = localStorage.getItem("userId");
+
+  const loadTasks = useCallback(async () => {
+    const response = await getTasks(userId);
+    setTasks(response.data);
+  }, [userId]);
 
   useEffect(() => {
     if (!userId) {
@@ -17,12 +23,9 @@ export default function Task({ onLogout }) {
       return;
     }
     loadTasks();
-  }, [userId]);
+  }, [userId, loadTasks, navigate]);
 
-  const loadTasks = async () => {
-    const response = await getTasks(userId);
-    setTasks(response.data);
-  };
+  
 
   const addTask = async () => {
     if (!title.trim()) {
@@ -49,10 +52,19 @@ export default function Task({ onLogout }) {
     loadTasks();
   };
 
+  const changeStatus = async (taskId, newStatus) => {
+    await updateTask(taskId, { status: newStatus });
+    loadTasks();
+  };
+
   const handleLogout = () => {
     onLogout();
     navigate("/login");
   };
+
+  const filteredTasks = filterStatus === "All"
+    ? tasks
+    : tasks.filter((task) => task.status === filterStatus);
 
   return (
     <div className="container">
@@ -83,15 +95,33 @@ export default function Task({ onLogout }) {
         <button onClick={addTask}>Add Task</button>
       </div>
 
+      <div className="card">
+        <label>Filter by Status:</label>
+        <select
+          value={filterStatus}
+          onChange={(e) => setFilterStatus(e.target.value)}
+        >
+          <option value="All">All</option>
+          <option value="Open">Open</option>
+          <option value="In Progress">In Progress</option>
+          <option value="Completed">Completed</option>
+        </select>
+      </div>
+
       <ul className="task-list">
-        {tasks.map((task) => (
+        {filteredTasks.map((task) => (
           <li key={task.id} className="task-item">
             <div>
               <strong>{task.title}</strong>
               <p>{task.description}</p>
-              <span className={`status ${task.status.replace(" ", "-")}`}>
-                {task.status}
-              </span>
+              <select
+                value={task.status}
+                onChange={(e) => changeStatus(task.id, e.target.value)}
+              >
+                <option value="Open">Open</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Completed">Completed</option>
+              </select>
             </div>
             <button onClick={() => removeTask(task.id)}>✕</button>
           </li>
